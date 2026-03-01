@@ -1,4 +1,3 @@
-import { createHash, randomUUID } from 'node:crypto';
 import { NodeRelationship, ObjectType } from './types';
 import type { Metadata, RelatedNodeInfo, RelatedNodeType, BaseNodeParams, TextNodeParams } from './types';
 
@@ -9,13 +8,22 @@ export abstract class BaseNode<T extends Metadata = Metadata> {
   id_: string;
   metadata: T;
   relationships: Partial<Record<NodeRelationship, RelatedNodeType<T>>>;
+  private _hash: string = '';
 
-  @lazyInitHash
-  accessor hash: string = '';
+  get hash() {
+    if (this._hash === '') {
+      this._hash = this.generateHash();
+    }
+    return this._hash;
+  }
+
+  set hash(newValue: string) {
+    this._hash = newValue;
+  }
 
   protected constructor(init?: BaseNodeParams<T>) {
     const { id_, metadata, relationships } = init || {};
-    this.id_ = id_ ?? randomUUID();
+    this.id_ = id_ ?? globalThis.crypto.randomUUID();
     this.metadata = metadata ?? ({} as T);
     this.relationships = relationships ?? {};
   }
@@ -152,36 +160,13 @@ export class Document<T extends Metadata = Metadata> extends TextNode<T> {
   }
 }
 
-function lazyInitHash(
-  value: ClassAccessorDecoratorTarget<BaseNode, string>,
-  _context: ClassAccessorDecoratorContext,
-): ClassAccessorDecoratorResult<BaseNode, string> {
-  return {
-    get() {
-      const oldValue = value.get.call(this);
-      if (oldValue === '') {
-        const hash = this.generateHash();
-        value.set.call(this, hash);
-      }
-      return value.get.call(this);
-    },
-    set(newValue: string) {
-      value.set.call(this, newValue);
-    },
-    init(value: string): string {
-      return value;
-    },
-  };
-}
-
 function createSHA256() {
-  const hash = createHash('sha256');
   return {
     update(data: string | Uint8Array): void {
-      hash.update(data);
+      throw new Error('[Mastra.TextNode.createSHA256] Not implemented');
     },
-    digest() {
-      return hash.digest('base64');
+    digest(): string {
+      throw new Error('[Mastra.TextNode.createSHA256] Not implemented');
     },
   };
 }
