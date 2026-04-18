@@ -39,8 +39,11 @@ function splitTextWithRegex(text: string, separator: string, separatorPosition?:
     for (let i = 1; i < splits.length - 1; i += 2) {
       const separator = splits[i];
       const text = splits[i + 1];
-      if (separator && text) {
-        result.push(separator + text);
+      // Preserve the separator even when the following text segment is empty.
+      // Two adjacent matches produce an empty `text`; dropping it silently loses
+      // characters and makes reconstructed chunks no longer substrings of the source.
+      if (separator) {
+        result.push(separator + (text ?? ''));
       }
     }
   }
